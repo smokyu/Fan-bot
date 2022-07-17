@@ -1,9 +1,11 @@
 import discord
 import json
 import os
+from dotenv import load_dotenv
 from discord.ext import commands
 
 os.chdir('C:\\Users\\smoky\\PycharmProjects\\FanBot')
+load_dotenv(dotenv_path='config')
 
 client = commands.Bot(command_prefix="!")
 
@@ -156,4 +158,4 @@ async def update_bank(user, change=0, mode="wallet"):
     return money
 
 
-client.run('OTk3OTI0NDAzMzkwMjA2MDI1.GllS8v.JvLM20_IB0s-m-MuBX3gStyzdOZVkUBv0rCe6I')
+client.run(os.getenv("TOKEN"))
