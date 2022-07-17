@@ -3,7 +3,7 @@ import json
 import os
 from discord.ext import commands
 
-os.chdir('D:\DEVELOPPEMENT\\FanBot')
+os.chdir('D:\\DEVELOPPEMENT\\FanBot')
 
 async def open_account(user):
     users = await get_bank_data()
