@@ -18,6 +18,6 @@ class FanBot(commands.Bot):
 
 
 fanbot = FanBot()
-fanbot.add_cog(economy.Balance)
+fanbot.add_cog(economy.Balance(FanBot))
 
 fanbot.run(os.getenv("TOKEN"))

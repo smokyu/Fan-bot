@@ -2,14 +2,14 @@ import discord
 import json
 import os
 from discord.ext import commands
-from economyFunctions import open_account, get_bank_data, update_bank
+from cogs.economyFunctions import open_account, get_bank_data, update_bank
 
 class Balance(commands.Cog):
     def __init__(self, fanbot):
         self.fanbot = fanbot
 
     @commands.command()
-    async def money(ctx, member: discord.Member):
+    async def money(self, ctx, member: discord.Member):
         await open_account(member)
         user = member
         users = await get_bank_data()
@@ -24,7 +24,7 @@ class Balance(commands.Cog):
 
 
     @commands.command()
-    async def deposit(ctx, amount=None):
+    async def deposit(self, ctx, amount=None):
         await open_account(ctx.author)
 
         if amount == None:
@@ -46,7 +46,7 @@ class Balance(commands.Cog):
 
 
     @commands.command()
-    async def withdraw(ctx, amount=None):
+    async def withdraw(self, ctx, amount=None):
         await open_account(ctx.author)
 
         if amount == None:
@@ -68,7 +68,7 @@ class Balance(commands.Cog):
 
 
     @commands.command()
-    async def pay(ctx, member: discord.Member, amount=None):
+    async def pay(self, ctx, member: discord.Member, amount=None):
         await open_account(ctx.author)
         await open_account(member)
 
@@ -91,7 +91,7 @@ class Balance(commands.Cog):
 
 
     @commands.command()
-    async def askmoney(ctx, member: discord.Member, amount=None):
+    async def askmoney(self, ctx, member: discord.Member, amount=None):
         if amount == None:
             await ctx.send("Aucun montant n'a été spécifié.")
             return
