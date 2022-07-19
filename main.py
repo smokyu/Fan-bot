@@ -21,11 +21,9 @@ fanbot = FanBot()
 
 slash = SlashCommand(fanbot, sync_commands=True, sync_on_cog_reload=True)
 
-fanbot.add_cog(economy.Balance(fanbot))
-fanbot.load_extension(economy)
+fanbot.remove_command("help")
 
-@slash.slash(name="test")
-async def test(ctx):
-    await ctx.send("ça marche")
+fanbot.load_extension('cogs.economy')
+fanbot.load_extension('cogs.others')
 
 fanbot.run(os.getenv("TOKEN"))

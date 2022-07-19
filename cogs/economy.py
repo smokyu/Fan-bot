@@ -2,18 +2,16 @@ import discord
 import json
 import os
 from discord.ext import commands
-from discord_slash import cog_ext
 from cogs.economyFunctions import open_account, get_bank_data, update_bank
-from main import fanbot
 
 def setup(bot):
-  fanbot.add_cog(Balance(bot))
+  bot.add_cog(Balance(bot))
 
 class Balance(commands.Cog):
     def __init__(self, fanbot):
         self.fanbot = fanbot
 
-    @commands.command()
+    @commands.command(name="money", description="Affiche l'argent d'un utilisateur.")
     async def money(self, ctx, member: discord.Member):
         await open_account(member)
         user = member
@@ -28,7 +26,7 @@ class Balance(commands.Cog):
         await ctx.send(embed=embed)
 
 
-    @commands.command()
+    @commands.command(name="deposit", description="Dépose de l'argent sur votre compte en banque.")
     async def deposit(self, ctx, amount=None):
         await open_account(ctx.author)
 
@@ -50,7 +48,7 @@ class Balance(commands.Cog):
         await ctx.send(f"Vous avez déposer {amount}$ sur votre compte en banque !")
 
 
-    @commands.command()
+    @commands.command(name="withdraw", description="Débite de l'argent sur votre compte en banque.")
     async def withdraw(self, ctx, amount=None):
         await open_account(ctx.author)
 
@@ -72,7 +70,7 @@ class Balance(commands.Cog):
         await ctx.send(f"Vous avez retiré {amount}$ sur votre compte en banque !")
 
 
-    @commands.command()
+    @commands.command(name="pay", description="Effectue un transfert d'un joueur à un autre.")
     async def pay(self, ctx, member: discord.Member, amount=None):
         await open_account(ctx.author)
         await open_account(member)
@@ -95,7 +93,7 @@ class Balance(commands.Cog):
         await ctx.send(f"Vous avez envoyé {amount}$ sur le compte en banque de {member.display_name}!")
 
 
-    @commands.command()
+    @commands.command(name="askmoney", description="Envoie un mp à une personne pour lui demander un virement.")
     async def askmoney(self, ctx, member: discord.Member, amount=None):
         if amount == None:
             await ctx.send("Aucun montant n'a été spécifié.")
@@ -108,7 +106,3 @@ class Balance(commands.Cog):
             return
 
         await member.send(f"Bonjour, {ctx.author} vous demande de lui faire un virement de {amount}$.")
-
-    @cog_ext.cog_slash(name="help")
-    async def help(self, ctx):
-        await ctx.send("On demande de l'aide ?")
