@@ -1,13 +1,9 @@
 import discord
 import json
 import os
+import cogs.shops
 from discord.ext import commands
-from discord_slash import cog_ext
-from cogs.economyFunctions import open_account, get_bank_data, update_bank
-from main import fanbot
-
-def setup(bot):
-  fanbot.add_cog(Balance(bot))
+from cogs.economyFunctions import open_account, get_bank_data, update_bank, buy_this
 
 class Balance(commands.Cog):
     def __init__(self, fanbot):
@@ -15,6 +11,8 @@ class Balance(commands.Cog):
 
     @commands.command()
     async def money(self, ctx, member: discord.Member):
+        await ctx.channel.purge(limit=1)
+
         await open_account(member)
         user = member
         users = await get_bank_data()
@@ -43,6 +41,8 @@ class Balance(commands.Cog):
         if int(amount) < 0:
             await ctx.send("le montant n'est pas valide.")
             return
+        if int(amount) == 0:
+            await ctx.send("Le montant n'est pas valide.")
 
         await update_bank(ctx.author, -1 * int(amount), "wallet")
         await update_bank(ctx.author, int(amount), "bank")
@@ -65,6 +65,8 @@ class Balance(commands.Cog):
         if int(amount) < 0:
             await ctx.send("le montant n'est pas valide.")
             return
+        if int(amount) == 0:
+            await ctx.send("Le montant n'est pas valide.")
 
         await update_bank(ctx.author, int(amount), "wallet")
         await update_bank(ctx.author, -1 * int(amount), "bank")
@@ -73,7 +75,9 @@ class Balance(commands.Cog):
 
 
     @commands.command()
-    async def pay(self, ctx, member: discord.Member, amount=None):
+    async def pay(self, ctx, member: discord.Member, amount=None, *, reason="Aucune raison n'a été renseignée."):
+        await ctx.channel.purge(limit=1)
+
         await open_account(ctx.author)
         await open_account(member)
 
@@ -88,12 +92,16 @@ class Balance(commands.Cog):
         if int(amount) < 0:
             await ctx.send("Le montant n'est pas valide.")
             return
+        if int(amount) == 0:
+            await ctx.send("Le montant n'est pas valide.")
 
         await update_bank(member, int(amount), "bank")
         await update_bank(ctx.author, -1 * int(amount), "bank")
 
-        await ctx.send(f"Vous avez envoyé {amount}$ sur le compte en banque de {member.display_name}!")
-
+        embed = discord.Embed()
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+        embed.add_field(name=f"{amount} :dollar:  a bien été donné à {member.display_name}", value=f"**Raison:** {reason}")
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def askmoney(self, ctx, member: discord.Member, amount=None):
@@ -109,6 +117,52 @@ class Balance(commands.Cog):
 
         await member.send(f"Bonjour, {ctx.author} vous demande de lui faire un virement de {amount}$.")
 
-    @cog_ext.cog_slash(name="help")
-    async def help(self, ctx):
-        await ctx.send("On demande de l'aide ?")
+
+    @commands.command()
+    async def shop(self, ctx):
+        embed = discord.Embed(title="Magasin")
+
+        for item in cogs.shops.mainshop:
+            name = item["name"]
+            price = item["price"]
+            description = item["description"]
+            embed.add_field(name=f"{name} ({price} :dollar:)", value=f"{description}", inline=False)
+
+        await ctx.send(embed=embed)
+
+
+    @commands.command()
+    async def buy(self, ctx, item, amount=1):
+        await open_account(ctx.author)
+
+        res = await buy_this(ctx.author, item, amount)
+
+        if not res[0]:
+            if res[1] == 1:
+                await ctx.send("L'objet n'a pas été trouvé.")
+                return
+            if res[1] == 2:
+                await ctx.send(f"Vous n'avez pas assez d'argent pour acheter {item}.")
+                return
+
+        await ctx.send(f"Vous avez acheté {amount} {item}.")
+
+    @commands.command()
+    async def inv(self, ctx):
+        await open_account(ctx.author)
+        user = ctx.author
+        users = await get_bank_data()
+
+        try:
+            bag = users[str(user.id)]["bag"]
+        except:
+            bag = []
+
+        embed = discord.Embed(title="Inventaire")
+        for item in bag:
+            name = item["item"]
+            amount = item["amount"]
+
+            embed.add_field(name=name, value=amount)
+
+        await ctx.send(embed=embed)
