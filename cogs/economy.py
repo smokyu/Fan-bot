@@ -3,7 +3,19 @@ import json
 import os
 import cogs.shops
 from discord.ext import commands
-from cogs.economyFunctions import open_account, get_bank_data, update_bank, buy_this
+from cogs.economyFunctions import open_account, get_bank_data, update_bank
+
+
+mainshop = [
+    {"name": "Montre", "price": 100, "description": "pour connaitre l'heure"},
+    {"name": "Ordi", "price": 1000, "description": "surfer sur le web"},
+    {"name": "Console", "price": 10000, "description": "jouer aux jeux-vidéos"},
+]
+
+
+def setup(bot):
+    bot.add_cog(Balance(bot))
+
 
 class Balance(commands.Cog):
     def __init__(self, fanbot):
@@ -24,7 +36,6 @@ class Balance(commands.Cog):
         embed.add_field(name="Porte-monnaie", value=wallet_amount)
         embed.add_field(name="Banque", value=bank_amount)
         await ctx.send(embed=embed)
-
 
     @commands.command()
     async def deposit(self, ctx, amount=None):
@@ -49,7 +60,6 @@ class Balance(commands.Cog):
 
         await ctx.send(f"Vous avez déposer {amount}$ sur votre compte en banque !")
 
-
     @commands.command()
     async def withdraw(self, ctx, amount=None):
         await open_account(ctx.author)
@@ -73,9 +83,15 @@ class Balance(commands.Cog):
 
         await ctx.send(f"Vous avez retiré {amount}$ sur votre compte en banque !")
 
-
     @commands.command()
-    async def pay(self, ctx, member: discord.Member, amount=None, *, reason="Aucune raison n'a été renseignée."):
+    async def pay(
+        self,
+        ctx,
+        member: discord.Member,
+        amount=None,
+        *,
+        reason="Aucune raison n'a été renseignée.",
+    ):
         await ctx.channel.purge(limit=1)
 
         await open_account(ctx.author)
@@ -100,7 +116,10 @@ class Balance(commands.Cog):
 
         embed = discord.Embed()
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
-        embed.add_field(name=f"{amount} :dollar:  a bien été donné à {member.display_name}", value=f"**Raison:** {reason}")
+        embed.add_field(
+            name=f"{amount} :dollar:  a bien été donné à {member.display_name}",
+            value=f"**Raison:** {reason}",
+        )
         await ctx.send(embed=embed)
 
     @commands.command()
@@ -115,8 +134,9 @@ class Balance(commands.Cog):
             await ctx.send("Le montant n'est pas valide.")
             return
 
-        await member.send(f"Bonjour, {ctx.author} vous demande de lui faire un virement de {amount}$.")
-
+        await member.send(
+            f"Bonjour, {ctx.author} vous demande de lui faire un virement de {amount}$."
+        )
 
     @commands.command()
     async def shop(self, ctx):
@@ -126,10 +146,11 @@ class Balance(commands.Cog):
             name = item["name"]
             price = item["price"]
             description = item["description"]
-            embed.add_field(name=f"{name} ({price} :dollar:)", value=f"{description}", inline=False)
+            embed.add_field(
+                name=f"{name} ({price} :dollar:)", value=f"{description}", inline=False
+            )
 
         await ctx.send(embed=embed)
-
 
     @commands.command()
     async def buy(self, ctx, item, amount=1):
@@ -158,11 +179,59 @@ class Balance(commands.Cog):
         except:
             bag = []
 
-        embed = discord.Embed(title="Inventaire")
+        em = discord.Embed(title="Inventaire")
         for item in bag:
             name = item["item"]
             amount = item["amount"]
 
-            embed.add_field(name=name, value=amount)
+            em.add_field(name=name, value=amount)
 
-        await ctx.send(embed=embed)
+        await ctx.send(embed=em)
+
+    async def buy_this(self, user, item_name, amount):
+        item_name = item_name.lower()
+        name_ = None
+        for item in mainshop:
+            name = item["name"].lower()
+            if name == item_name:
+                name_ = name
+                price = item["price"]
+                break
+
+        if name_ == None:
+            return [False, 1]
+
+        cost = price * amount
+
+        users = await get_bank_data()
+
+        bal = await update_bank(user)
+
+        if bal[0] < cost:
+            return [False, 2]
+
+        try:
+            index = 0
+            t = None
+            for thing in users[str(user.id)]["bag"]:
+                n = thing["item"]
+                if n == item_name:
+                    old_amt = thing["amount"]
+                    new_amt = old_amt + amount
+                    users[str(user.id)]["bag"][index]["amount"] = new_amt
+                    t = 1
+                    break
+                index += 1
+            if t == None:
+                obj = {"item": item_name, "amount": amount}
+                users[str(user.id)]["bag"].append(obj)
+        except:
+            obj = {"item": item_name, "amount": amount}
+            users[str(user.id)]["bag"] = [obj]
+
+        with open("mainbank.json", "w") as f:
+            json.dump(users, f)
+
+        await update_bank(user, cost * -1, "wallet")
+
+        return [True, "Worked"]
